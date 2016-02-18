@@ -44,12 +44,7 @@ public class WeiXinUtilTest {
 
         int result = WeiXinUtil.createMenu(token.getAccesstoken(),"0",menu);
 
-        if(0 == result){
-            System.out.println("创建菜单成功");
-
-        }else{
-            System.out.println("创建菜单失败"+result);
-        }
+        assertEquals("测试不成功",0, result);
 
     }
 }
