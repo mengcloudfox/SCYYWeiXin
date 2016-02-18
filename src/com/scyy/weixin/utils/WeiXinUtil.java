@@ -218,7 +218,7 @@ public class WeiXinUtil {
         button.setName("物流菜单");
         button.setSub_button(new Button[]{button31,button32});
 
-        menu.setButtons(new Button[]{button11,button21,button});
+        menu.setButton(new Button[]{button11,button21,button});
         return menu;
     }
 
