@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletRequest;
 import com.scyy.weixin.message.resp.TextMessage;
 import com.scyy.weixin.utils.AuthProcess;
 import com.scyy.weixin.utils.MessageUtil;
+import com.scyy.weixin.utils.WebServiceUtil;
+
 
 /**
  * Created by mengyun on 2016/2/16.
@@ -70,6 +72,9 @@ public class CoreService {
             if (msgType.equals(MessageUtil.REQ_MESSAGE_TYPE_TEXT)) {
                 if (msgContent.equals("贾洪斌")) {
                     respContent = "贾总您好！有什么需要为您效劳的？";
+                }
+                else if (MessageUtil.isNumeric(msgContent)){
+                    respContent = WebServiceUtil.getHH(msgContent.trim());
                 }
                 else
                 respContent = "您发送的是文本消息！";
