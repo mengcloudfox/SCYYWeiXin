@@ -1,10 +1,14 @@
 package com.scyy.weixin.utils;
 
+import com.scyy.weixin.department.Depart;
 import com.scyy.weixin.menu.Button;
 import com.scyy.weixin.menu.ClickButton;
 import com.scyy.weixin.menu.Menu;
 import com.scyy.weixin.menu.ViewButton;
+import com.scyy.weixin.thread.TokenThread;
 import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
+import net.sf.json.JSON;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
@@ -27,6 +31,8 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by mengyun on 2016/2/17.
@@ -37,9 +43,20 @@ public class WeiXinUtil {
 
     private static final String ACCESS_TOKEN_URL = "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=CORPID&corpsecret=CORPSECRET";
 
+    private static final String JSAPI_TICKET_URL = "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=ACCESS_TOKEN";
+
     private static final String UPLOAD_URL = "https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token=ACCESS_TOKEN&type=TYPE";
 
     private static final String CREATE_MENU_URL = "https://qyapi.weixin.qq.com/cgi-bin/menu/create?access_token=ACCESS_TOKEN&agentid=AGENTID";
+
+    private static final String CREATE_DEPART_URL = "https://qyapi.weixin.qq.com/cgi-bin/department/create?access_token=ACCESS_TOKEN";
+
+    private static final String GET_DEPART_URL = "https://qyapi.weixin.qq.com/cgi-bin/department/list?access_token=ACCESS_TOKEN&id=ID";
+
+    private static final String UPDATE_DEPART_URL = "https://qyapi.weixin.qq.com/cgi-bin/department/update?access_token=ACCESS_TOKEN";
+
+
+    private static final String DELETE_DEPART_URL = "https://qyapi.weixin.qq.com/cgi-bin/department/delete?access_token=ACCESS_TOKEN&id=ID";
 
     private static Logger log = LoggerFactory.getLogger(WeiXinUtil.class);
 
@@ -96,6 +113,85 @@ public class WeiXinUtil {
         }
         return accessToken;
     }
+
+    public static JSApiTicket getJSApiTicket(String token){
+        JSApiTicket jsApiTicket = new JSApiTicket();
+
+        String url = JSAPI_TICKET_URL.replace("ACCESS_TOKEN",token);
+        JSONObject jsonObject = doGetStr(url);
+        if(jsonObject != null){
+            jsApiTicket.setTicket(jsonObject.getString("ticket"));
+            jsApiTicket.setExpiresin(jsonObject.getLong("expires_in"));
+        }
+        return jsApiTicket;
+    }
+
+    /*
+    * 获取部门列表
+    *
+    *
+    * */
+    public static ArrayList<Depart> getDeparts(String accessToken, Integer id){
+        List<Depart> departs = new ArrayList<>();
+        String url = GET_DEPART_URL.replace("ACCESS_TOKEN", accessToken);
+        JSONObject jsonObject = doGetStr(url);
+        if (jsonObject != null)
+        {
+            System.out.println("返回值: " + jsonObject.get("errcode")+" 返回消息: " + jsonObject.getString("errmsg"));
+            if(jsonObject.getString("errcode").equals("0") && jsonObject.getString("errmsg").equals("ok")){
+                JSONArray jsonArray = jsonObject.getJSONArray("department");
+                for(int i=0; i<jsonArray.size(); i++)
+                {
+                    JSONObject jo = jsonArray.getJSONObject(i);
+                    Depart department = new Depart();
+                    department.setName(jo.getString("name"));
+                    department.setId(Integer.parseInt(jo.getString("id")));
+                    department.setOrder(jo.getString("order"));
+                    department.setParentid(jo.getString("parentid"));
+                    departs.add(department);
+                }
+            }
+        }
+        return (ArrayList<Depart>)departs;
+    }
+
+    /*
+    *
+    * 更新部门信息
+    *
+    * */
+
+    public static String updateDepart(String accessToken, Depart depart){
+
+        String url = UPDATE_DEPART_URL.replace("ACCESS_TOKEN", accessToken);
+        String result = "";
+        String outString = JSONObject.fromObject(depart).toString();
+        JSONObject jsonObject = JSONObject.fromObject(doPostStr(url, outString));
+        if (jsonObject != null) {
+            System.out.println("返回值: " + jsonObject.get("errcode") + " 返回消息: " + jsonObject.getString("errmsg"));
+            if (jsonObject.getString("errcode").equals("0") && jsonObject.getString("errmsg").equals("updated")) {
+                result = "0";
+            } else
+                result = jsonObject.getString("errcode");
+        }
+        return  result;
+    }
+
+    public static String deleteDepart(String accessToken, Depart depart){
+
+        String url = DELETE_DEPART_URL.replace("ACCESS_TOKEN", accessToken).replace("ID",depart.getId().toString());
+        String result = "";
+        JSONObject jsonObject = JSONObject.fromObject(doGetStr(url));
+        if (jsonObject != null) {
+            System.out.println("返回值: " + jsonObject.get("errcode") + " 返回消息: " + jsonObject.getString("errmsg"));
+            if (jsonObject.getString("errcode").equals("0") && jsonObject.getString("errmsg").equals("deleted")) {
+                result = "0";
+            } else
+                result = jsonObject.getString("errcode");
+        }
+        return  result;
+    }
+
 
     public static String upload(String filePath,String accessToken,String type) throws IOException,NoSuchAlgorithmException,NoSuchProviderException,KeyManagementException{
         File file = new File(filePath);
@@ -222,6 +318,16 @@ public class WeiXinUtil {
         return menu;
     }
 
+    public static Depart initDepart(){
+        Depart depart = new Depart();
+        depart.setName("测试部门");
+        depart.setId(3);
+        depart.setOrder("200");
+        depart.setParentid("1"); //
+
+        return depart;
+    }
+
     public static int createMenu(String accessToken,String agentID,String menu){
         int result = 0;
         String url = CREATE_MENU_URL.replace("ACCESS_TOKEN",accessToken).replace("AGENTID", agentID);
@@ -232,5 +338,24 @@ public class WeiXinUtil {
         return result;
     }
 
+    public static int createDepart(String accessToken,String depart){
+        int result = 0;
+        String url = CREATE_DEPART_URL.replace("ACCESS_TOKEN",accessToken);
+        JSONObject jsonObject = doPostStr(url, depart);
+        if (null != jsonObject){
+            result = jsonObject.getInt("errcode");
+        }
+        return result;
+    }
+
+
+    public static boolean isNumeric(String str){
+        for (int i = 0; i < str.length(); i++){
+            if (!Character.isDigit(str.charAt(i))){
+                return false;
+            }
+        }
+        return true;
+    }
 
 }

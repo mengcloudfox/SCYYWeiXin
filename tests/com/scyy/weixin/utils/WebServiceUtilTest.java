@@ -10,13 +10,13 @@ import static org.junit.Assert.*;
 public class WebServiceUtilTest {
 
     @Test
-    public void testGetHH() throws Exception {
-        String hh = "1110001";
+    public void testGetDrug() throws Exception {
+       /* String pm = "丙泊酚";
 
-        String pm = WebServiceUtil.getHH(hh);
+        String result = WebServiceUtil.getDrug(pm);
 
-        System.out.print(pm);
+        System.out.print(result);
 
-        assertNotNull(pm);
+        assertNotNull(result);*/
     }
 }

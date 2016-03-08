@@ -3,13 +3,11 @@ package com.scyy.weixin.service;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 import com.scyy.weixin.message.resp.TextMessage;
-import com.scyy.weixin.utils.AuthProcess;
-import com.scyy.weixin.utils.MessageUtil;
-import com.scyy.weixin.utils.WebServiceUtil;
+import com.scyy.weixin.utils.*;
+import javafx.beans.binding.ObjectExpression;
 
 
 /**
@@ -72,10 +70,36 @@ public class CoreService {
             if (msgType.equals(MessageUtil.REQ_MESSAGE_TYPE_TEXT)) {
                 if (msgContent.equals("贾洪斌")) {
                     respContent = "贾总您好！有什么需要为您效劳的？";
+                }else if(msgContent.length() >= 2 && (!WeiXinUtil.isNumeric(msgContent))) {
+                    Map drugMap = (Map)WebServiceUtil.getDrug(msgContent).clone();
+                    if(drugMap.keySet().size() >= 30) {
+                        respContent = "系统查询相关匹配品种结果共"+
+                                drugMap.keySet().size() +
+                                "条。查询结果过多，请输入更为详细的品种信息或者使用其他方式进行查询!";
+                    }else {
+                        respContent = "";
+                        Iterator iter = drugMap.entrySet().iterator();
+                        while (iter.hasNext()) {
+                            Map.Entry entry = (Map.Entry) iter.next();
+                            respContent += entry.getValue().toString();
+                        }
+                    }
+
+                    /*for (HashMap.Entry<String, Drug> entry : drugMap.entrySet()) {
+
+                        System.out.println("货号 = " + entry.getKey() + ", Value = " + entry.getValue().toString());
+                        respContent = respContent + entry.getValue().toString();
+                    }*/
+                }else if (msgContent.length() >= 7 && (WeiXinUtil.isNumeric(msgContent))){
+                    List<DrugStock> drugStockList = WebServiceUtil.getDrugStock(msgContent);
+                    respContent = "";
+                    Iterator iterator = drugStockList.listIterator();
+                    while(iterator.hasNext()) {
+                        DrugStock drugStock = (DrugStock)iterator.next();
+                        respContent += drugStock.toString();
+                    }
                 }
-                else if (MessageUtil.isNumeric(msgContent)){
-                    respContent = WebServiceUtil.getHH(msgContent.trim());
-                }
+
                 else
                 respContent = "您发送的是文本消息！";
             }
@@ -114,6 +138,9 @@ public class CoreService {
             }
 
             if (msgType.equals(MessageUtil.RESP_MESSAGE_TYPE_TEXT)) {
+                //消息长度
+                System.out.println("消息长度为: "+ msgContent.getBytes("UTF-8").length);
+
                 textMessage.setContent(respContent);
                 respMessage = MessageUtil.textMessageToXml(textMessage);
                 System.out.println("发送信息明文为:" + respMessage);
